@@ -1,0 +1,22 @@
+{
+  "name": "plt",
+  "version": "1.0.0",
+  "description": "",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kadirnacar/tv_player.git"
+  },
+  "scripts": {},
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/kadirnacar/tv_player/issues"
+  },
+  "homepage": "https://github.com/kadirnacar/tv_player#readme",
+
+  "dependencies": {
+    "lowdb": "^1.0.0",
+    "route-parser": "^0.0.5"
+  },
+  "devDependencies": {}
+}
