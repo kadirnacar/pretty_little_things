@@ -65,7 +65,7 @@ class App extends React.Component<any, any> {
               vertical: 'bottom',
               horizontal: 'right',
             }}>
-            <React.Fragment>
+            <div style={{ paddingTop: 48, overflow: "hidden", width: "100%", height: "100%" }}>
               <CssBaseline />
               <Topbar onOpenMenu={this.onOpenMenu} onCloseMenu={this.onCloseMenu} theme={theme} left={this.state.sideBarToggle ? 240 : 0} />
               <Sidebar onOpenMenu={this.onOpenMenu} onCloseMenu={this.onCloseMenu} isOpen={this.state.sideBarToggle} theme={theme} width={this.state.sideBarToggle ? 240 : 0} />
@@ -78,14 +78,19 @@ class App extends React.Component<any, any> {
                   duration: theme.transitions.duration.leavingScreen,
                 }),
                 display: 'flex',
+                height: "100%",
+                width: "100%",
                 flexDirection: 'column',
+                paddingTop: 20,
+                paddingBottom: 20,
+                overflow: "auto",
                 minHeight: "100%"
               }}>
-                <div style={{ minHeight: 64 }} />
+                {/* <div style={{ minHeight: 64 }} /> */}
 
-                <Container maxWidth="xl">
+                <Container maxWidth="xl" style={{ height: "100%" }}>
                   <MuiPickersUtilsProvider utils={MomentUtils} locale="tr">
-                    <Grid container spacing={2} >
+                    <Grid container spacing={2} style={{ width: "100%", height: "100%" }} >
                       {/* <Routes/> */}
                       {this.props.children}
                     </Grid>
@@ -93,7 +98,7 @@ class App extends React.Component<any, any> {
                 </Container>
                 {/* <Footer /> */}
               </main>
-            </React.Fragment>
+            </div>
           </SnackbarProvider>
         </ThemeProvider>
       </React.Fragment >

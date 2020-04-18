@@ -4,7 +4,7 @@ import Grid from '@material-ui/core/Grid';
 import TextField from '@material-ui/core/TextField';
 
 const NumberFormatCustom = (props) => {
-    const { inputRef, prefix, onChange, ...other } = props;
+    const { inputRef, prefix, max, onChange, ...other } = props;
     return (
         <NumberFormat
             {...other}
@@ -20,6 +20,7 @@ const NumberFormatCustom = (props) => {
             thousandSeparator
             isNumericString
             prefix={prefix}
+            max={max}
         />
     );
 }

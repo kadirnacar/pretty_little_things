@@ -27,7 +27,7 @@ class TopbarComponent extends React.Component<Props, any> {
   render() {
 
     return (
-      <AppBar position="fixed" color="transparent" style={
+      <AppBar position="fixed" style={
         {
           marginLeft: this.props.left,
           width: `calc(100% - ${this.props.left}px)`,
