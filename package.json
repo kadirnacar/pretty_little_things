@@ -15,14 +15,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/kadirnacar/tv_player.git"
+    "url": "git+https://github.com/kadirnacar/pretty_little_things.git"
   },
   "author": "",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/kadirnacar/tv_player/issues"
+    "url": "https://github.com/kadirnacar/pretty_little_things/issues"
   },
-  "homepage": "https://github.com/kadirnacar/tv_player#readme",
+  "homepage": "https://github.com/kadirnacar/pretty_little_things#readme",
   "peerDependencies": {},
   "peerDependenciesMeta": {
     "canvas": {
