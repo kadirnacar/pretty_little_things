@@ -96,7 +96,7 @@ class Home extends React.Component<Props, any> {
                   }}>
                   <DeleteIcon />
                 </IconButton>
-                {this.props.Color.List.map((item, index) => {
+                {this.props.Color && this.props.Color.List ? this.props.Color.List.map((item, index) => {
                   return <IconButton
                     key={index}
                     style={{ border: this.state.color == item.code ? "1px solid #fff" : "none" }}
@@ -105,7 +105,7 @@ class Home extends React.Component<Props, any> {
                     }}>
                     <FiberManualRecordIcon htmlColor={item.code} />
                   </IconButton>
-                })}
+                }) : null}
 
               </Grid>
             </Grid>

@@ -71,13 +71,17 @@ class Settings extends React.Component<Props, any> {
                     }
                   }
                 ]}
-                data={this.props.Color.List}
+                data={this.props.Color && this.props.Color.List ? this.props.Color.List : []}
                 actions={[
                   {
                     icon: 'add',
                     tooltip: 'Ekle',
                     isFreeAction: true,
                     onClick: (event) => {
+                      if (!this.props.Color && !this.props.Color.List) {
+                        this.props.Color.List = [];
+
+                      }
                       this.props.Color.List.push({
                         code: "",
                       });

@@ -13,7 +13,8 @@ export const reducer: Reducer<ColorState> = (currentState: ColorState = unloaded
 
     switch (action.type) {
         case Actions.ReceiveListData:
-            currentState.List = action.payload;
+            if (action.payload)
+                currentState.List = action.payload;
             return { ...currentState };
         case Actions.RequestListData:
             return { ...currentState };

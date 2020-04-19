@@ -11,7 +11,8 @@
     "electron1": "electron ./dist/index.js",
     "electron-prod": "electron ./prod/index.js",
     "package": "electron-packager ./prod",
-    "watch": "webpack-dev-server --config webpack.config.js  --profile --watch --display-error-details"
+    "watch": "webpack-dev-server --config webpack.config.js  --profile --watch --display-error-details",
+    "package-win":"electron-packager ./prod --overwrite --platform=win32 --arch=x64 --out=release-builds"
   },
   "repository": {
     "type": "git",
