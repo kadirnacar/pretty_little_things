@@ -1,7 +1,7 @@
 /**
  * Entry point of the Election app.
  */
-import { Route } from '@electronApp';
+import { Route, ColorsRouter, FileRouter } from '@electronApp';
 import { app, BrowserWindow } from 'electron';
 import * as path from 'path';
 import * as url from 'url';
@@ -12,7 +12,8 @@ app.allowRendererProcessReuse = false;
 
 const route = new Route();
 
-// route.use("/api/channels", ChannelsRouter);
+route.use("/api/colors", ColorsRouter);
+route.use("/api/file", FileRouter);
 
 const installExtensions = async () => {
     // // const installer = require('electron-devtools-installer');

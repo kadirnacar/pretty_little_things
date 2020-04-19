@@ -1,8 +1,11 @@
+import { ColorState, ColorReducer } from "../reducers/Color";
 
 export interface ApplicationState {
+    Color?: ColorState;
 }
 
 export const reducers = {
+    Color: ColorReducer
 };
 
 export interface AppThunkAction<TAction> {

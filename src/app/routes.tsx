@@ -25,7 +25,7 @@ class Routes extends React.Component<any, any>{
 
 const style = makeStyles({
     transitionGroup: {
-        position: "relative",
+        // position: "relative",
         '& .fade-enter': {
             transition: "all 0.5s",
             left: "calc(100vh)",

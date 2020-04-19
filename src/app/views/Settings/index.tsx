@@ -1,3 +1,4 @@
+import { TextField, ColorField } from '@components';
 import Button from '@material-ui/core/Button';
 import Card from '@material-ui/core/Card';
 import CardContent from '@material-ui/core/CardContent';
@@ -5,15 +6,14 @@ import CardHeader from '@material-ui/core/CardHeader';
 import Divider from '@material-ui/core/Divider';
 import Grid from '@material-ui/core/Grid';
 import { ApplicationState } from "@store";
+import MaterialTable from 'material-table';
 import * as React from "react";
 import { connect } from 'react-redux';
+import { RouteComponentProps, withRouter } from 'react-router-dom';
 import { bindActionCreators } from 'redux';
-import { withRouter, RouteComponentProps } from 'react-router-dom';
-import Paper from '@material-ui/core/Paper';
-import MaterialTable from 'material-table';
-import { TextField, RadioField, CheckField } from '@components';
+import { ColorActions } from '@reducers';
 
-type Props = ApplicationState & RouteComponentProps
+type Props = ApplicationState & { ColorActions: typeof ColorActions } & RouteComponentProps
 class Settings extends React.Component<Props, any> {
   constructor(props) {
     super(props);
@@ -27,7 +27,7 @@ class Settings extends React.Component<Props, any> {
       <Grid item xs={12}>
         <Card>
           <CardHeader
-            title="Kanal Düzenleme"
+            title="Renkler"
             action={
               <React.Fragment>
                 <Button
@@ -40,6 +40,7 @@ class Settings extends React.Component<Props, any> {
                   color="primary"
                   variant="contained"
                   onClick={async () => {
+                    await this.props.ColorActions.save(this.props.Color.List)
                   }}>Kaydet</Button>
               </React.Fragment>
             } />
@@ -47,31 +48,39 @@ class Settings extends React.Component<Props, any> {
           <CardContent>
             <Grid container spacing={3}>
               <MaterialTable
-                style={{ width: "100%" }}
+                style={{ width: "100%", position: "inherit" }}
                 options={{ search: false, showTitle: false, paging: false }}
                 editable={{
                   onRowDelete: oldData => new Promise(resolve => {
+                    this.props.Color.List.splice(oldData["tableData"].id, 1);
                     this.setState({})
                     resolve();
                   }),
                 }}
                 columns={[
-                  { title: "Adı", field: "name" }
+                  {
+                    title: "Renk Kodu", field: "code", render: (data, type) => {
+                      return <ColorField
+                        value={data.code}
+                        label='Renk'
+                        onChange={(event) => {
+                          data.code = event.target.value.hex;
+                          this.setState({});
+                        }}
+                      />
+                    }
+                  }
                 ]}
-                data={[]}
+                data={this.props.Color.List}
                 actions={[
                   {
                     icon: 'add',
                     tooltip: 'Ekle',
                     isFreeAction: true,
                     onClick: (event) => {
-                      this.setState({})
-                    }
-                  }, {
-                    icon: 'file_copy',
-                    tooltip: 'Kopyala',
-                    isFreeAction: false,
-                    onClick: (event, row: any) => {
+                      this.props.Color.List.push({
+                        code: "",
+                      });
                       this.setState({})
                     }
                   }]}
@@ -80,65 +89,17 @@ class Settings extends React.Component<Props, any> {
                   render: rowData => {
                     return (
                       <Grid container style={{ padding: 30, width: "100%", backgroundColor: "#303030", margin: 0 }} spacing={3}>
-                        <TextField
-                          value={rowData.name}
-                          label='İsim'
+                        <ColorField
+                          value={rowData.code}
+                          label='Renk'
                           onChange={(event) => {
-                            rowData.name = event.target.value;
+                            rowData.code = event.target.value.hex;
                             this.setState({});
                           }}
                         />
-                        <RadioField
-                          value={rowData.type}
-                          label="Türü"
-                          onChange={(event) => {
-                            rowData.type = event.target.value;
-                            this.setState({});
-                          }}
-                          options={[
-                            { value: 0, label: "Url" },
-                            { value: 3, label: "Regex" }
-                          ]} />
-                        <TextField
-                          value={rowData.url}
-                          xs={12}
-                          md={12}
-                          disabled={rowData.type == 3}
-                          label='Url'
-                          onChange={(event) => {
-                            rowData.url = event.target.value;
-                            this.setState({});
-                          }}
-                        />
-                        {
-                          rowData.type == 3 ?
-                            <React.Fragment>
-                              <TextField
-                                value={rowData.pageUrl}
-                                label='Sayfa Url'
-                                onChange={(event) => {
-                                  rowData.pageUrl = event.target.value;
-                                  this.setState({});
-                                }}
-                              />
-                              <TextField
-                                value={rowData.urlRegex}
-                                label='Regex'
-                                onChange={(event) => {
-                                  rowData.urlRegex = event.target.value;
-                                  this.setState({});
-                                }}
-                              />
-                              <CheckField
-                                checked={rowData.iframe}
-                                label='Regex'
-                                onChange={(event) => {
-                                  rowData.iframe = event.target.checked;
-                                  this.setState({});
-                                }}
-                              />
-                            </React.Fragment> : null
-                        }
+
+
+
                       </Grid>
                     );
                   }
@@ -156,7 +117,6 @@ class Settings extends React.Component<Props, any> {
 export const component = withRouter(connect(
   (state: ApplicationState) => state,
   dispatch => {
-    return {};
-    // return { ChannelActions: bindActionCreators({ ...ChannelActions }, dispatch) };
+    return { ColorActions: bindActionCreators({ ...ColorActions }, dispatch) };
   }
 )(Settings)) as any;

@@ -7,22 +7,31 @@ import { ApplicationState } from "@store";
 import * as React from "react";
 import { connect } from "react-redux";
 import FiberManualRecordIcon from '@material-ui/icons/FiberManualRecord';
+import { ColorActions } from "@reducers";
+import { bindActionCreators } from "redux";
+import { FileService } from "@services";
 
-type Props = ApplicationState;
+type Props = ApplicationState & { ColorActions: typeof ColorActions };
 
 class Home extends React.Component<Props, any> {
   constructor(props) {
     super(props);
+    const size = 20;
     this.state = {
-      xSize: 50,
-      ySize: 50,
+      xSize: size,
+      ySize: size,
       color: "#ffffff",
       scale: 1,
-      xSize_temp: 50,
-      ySize_temp: 50,
+      image: { path: null, data: null },
+      xSize_temp: size,
+      ySize_temp: size,
       scale_temp: 1,
     }
   }
+  async  UNSAFE_componentWillMount() {
+    await this.props.ColorActions.getList();
+  }
+
   render() {
     return (
       <Grid container spacing={3} style={{ height: "100%" }}>
@@ -55,12 +64,20 @@ class Home extends React.Component<Props, any> {
                 valueLabelDisplay="auto"
                 marks={true}
                 max={2}
-                min={0.5}
+                min={0.1}
                 onChange={(e, newValue) => {
                   this.setState({ scale_temp: newValue })
                 }} />
 
               <Grid item xs={12}>
+                <Button
+                  variant="contained"
+                  onClick={async () => {
+                    const result = await FileService.getList();
+                    console.log(result)
+                    if (!result.hasErrors())
+                      this.setState({ image: result.value })
+                  }}>Resim Yükle</Button>
                 <Button
                   variant="contained"
                   onClick={async () => {
@@ -73,23 +90,23 @@ class Home extends React.Component<Props, any> {
               </Grid>
               <Grid item xs={12}>
                 <IconButton
+                  style={{ border: this.state.color == "hide" ? "1px solid #fff" : "none" }}
                   onClick={() => {
-                    this.setState({ color: "#cccccc" })
+                    this.setState({ color: "hide" })
                   }}>
                   <DeleteIcon />
                 </IconButton>
-                <IconButton
-                  onClick={() => {
-                    this.setState({ color: "#ffffff" })
-                  }}>
-                  <FiberManualRecordIcon htmlColor={"#ffffff"}/>
-                </IconButton>
-                <IconButton
-                  onClick={() => {
-                    this.setState({ color: "#ff0000" })
-                  }}>
-                  <FiberManualRecordIcon htmlColor={"#ff0000"} />
-                </IconButton>
+                {this.props.Color.List.map((item, index) => {
+                  return <IconButton
+                    key={index}
+                    style={{ border: this.state.color == item.code ? "1px solid #fff" : "none" }}
+                    onClick={() => {
+                      this.setState({ color: item.code })
+                    }}>
+                    <FiberManualRecordIcon htmlColor={item.code} />
+                  </IconButton>
+                })}
+
               </Grid>
             </Grid>
           </Paper>
@@ -97,6 +114,7 @@ class Home extends React.Component<Props, any> {
         <Grid item xs={8} style={{ height: "100%" }}>
           <Paper style={{ overflow: "auto", height: "100%", position: "relative" }}>
             <GridTable
+              image={this.state.image}
               color={this.state.color}
               ySize={this.state.ySize}
               xSize={this.state.xSize}
@@ -114,7 +132,6 @@ class Home extends React.Component<Props, any> {
 export const component = connect(
   (state: ApplicationState) => state,
   dispatch => {
-    return {};
-    // return { ChannelActions: bindActionCreators({ ...ChannelActions }, dispatch) };
+    return { ColorActions: bindActionCreators({ ...ColorActions }, dispatch) };
   }
 )(Home as any);
