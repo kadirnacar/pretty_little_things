@@ -68,7 +68,7 @@ class Home extends React.Component<Props, any> {
                 valueLabelDisplay="auto"
                 marks={true}
                 max={2}
-                min={0.1}
+                min={0}
                 onChange={(e, newValue) => {
                   this.setState({ scale_temp: newValue })
                 }} />
@@ -139,7 +139,7 @@ class Home extends React.Component<Props, any> {
               ySize={this.state.ySize}
               xSize={this.state.xSize}
               scale={this.state.scale}
-              cellSize={30} />
+              cellSize={25} />
           </Paper>
         </Grid>
       </Grid>

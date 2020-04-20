@@ -58,7 +58,7 @@ export class GridTableComp extends React.Component<Props, any> {
     color: "#ffffff",
     selectMode: false,
     image: { path: null, data: null },
-    cellSize: 30,
+    cellSize: 10,
   }
 
   constructor(props) {
@@ -74,8 +74,8 @@ export class GridTableComp extends React.Component<Props, any> {
     this.countInfo = React.createRef();
     this.selectInfo = React.createRef();
     this.scale = 1;
-    this.circles = [];
-    this.rects = [];
+    this.circles = {};
+    this.rects = {};
     this.selectMode = false;
     this.state = { image: null }
   }
@@ -87,8 +87,8 @@ export class GridTableComp extends React.Component<Props, any> {
   isDraw: boolean;
   layer: React.Ref<any>;
   stage: React.Ref<any>;
-  circles: any[][];
-  rects: any[][];
+  circles: {};
+  rects: {};
   scale: number;
   imageEl: HTMLImageElement;
   selectMode: boolean;
@@ -96,22 +96,18 @@ export class GridTableComp extends React.Component<Props, any> {
   countInfo: React.Ref<any>;
   selectInfo: React.Ref<any>;
 
-  componentDidUpdate() {
-    // this.loadImage()
-
-  }
   shouldComponentUpdate(nextProps, nextState) {
     this.xSize = nextProps.xSize;
     this.ySize = nextProps.ySize;
     if (this.props.xSize != nextProps.xSize || this.props.ySize != nextProps.ySize) {
       this.xSize = nextProps.xSize;
       this.ySize = nextProps.ySize;
-      this.rects = [];
-      this.circles = [];
-      this.stage["current"].clear();
+      this.drawGrid();
+      this.stage["current"].setSize({ width: nextProps.xSize * this.props.cellSize * this.scale, height: nextProps.ySize * this.props.cellSize * this.scale });
       this.stage["current"].draw();
+
       this.loadImage();
-      return true;
+      return false;
     }
     if (this.props.cellSize != nextProps.cellSize)
       return true;
@@ -139,32 +135,47 @@ export class GridTableComp extends React.Component<Props, any> {
     return false;
   }
 
-  setCircle(x, y, color = null) {
+  setCircle(x: number, y: number, color = null) {
     if (!color)
       color = this.color;
+    const xName: string = `${x}`;
+    const yName: string = `${y}`;
     if (color == "hide") {
-      this.circles[x][y].hide()
-      this.rects[x][y]["draw"]()
-    } else if (this.circles[x] && this.circles[x][y]) {
-
-      this.circles[x][y].show()
-      this.circles[x][y]["setStroke"](color)
-      this.circles[x][y]["draw"]()
-    }
-    let count = 0;
-    for (var i = 0; i < this.circles.length; i++) {
-      for (var c = 0; c < this.circles[i].length; c++) {
-        if (this.circles[i][c].attrs.visible)
-          count++;
+      if (this.circles[xName] && this.circles[xName][yName]) {
+        this.circles[xName][yName].destroy();
+        delete this.circles[xName][yName];
+        if (Object.keys(this.circles[xName]).length == 0)
+          delete this.circles[xName];
       }
+      this.rects[x.toString()][y.toString()]["draw"]();
+    } else {
+      let gridCircle: Konva.Circle;
+      if (this.circles[xName] && this.circles[xName][yName]) {
+        this.circles[xName][yName].destroy();
+      }
+      gridCircle = new Konva.Circle({
+        x: 2 + (((this.props.cellSize) * x)) + (this.props.cellSize / 2),
+        y: 2 + (((this.props.cellSize) * y)) + (this.props.cellSize / 2),
+        radius: (this.props.cellSize / 2) - 4,
+        strokeWidth: 5,
+        stroke: color
+      });
+      if (!this.circles[xName])
+        this.circles[xName] = {};
+      this.circles[xName][yName] = gridCircle;
+      this.layer["current"].add(gridCircle);
+      gridCircle.draw();
     }
-    this.countInfo["current"].innerText = `Toplam : ${count} adet`;
+
+    let length = 0;
+    Object.getOwnPropertyNames(this.circles).forEach(key => length += Object.getOwnPropertyNames(this.circles[key]).length);
+    this.countInfo["current"].innerText = `Toplam : ${length} adet`;
   }
   loadImage() {
     if (!this.image || !this.image.data)
       return;
     this.imageEl = new window.Image();
-    this.imageEl.src = this.image.data;//"https://instagram.fbtz1-7.fna.fbcdn.net/v/t51.2885-19/s320x320/67893400_748297338934110_1352840579989372928_n.jpg?_nc_ht=instagram.fbtz1-7.fna.fbcdn.net&_nc_ohc=SDq1p6I4Mx4AX9rGnkz&oh=63d8c7114e4658709687e6539a4952cf&oe=5EC67931";
+    this.imageEl.src = this.image.data;
     this.imageEl.addEventListener('load', () => {
       const height = this.imageEl.naturalHeight;
       const width = this.imageEl.naturalWidth;
@@ -173,7 +184,6 @@ export class GridTableComp extends React.Component<Props, any> {
       const size = Math.round(width / this.xSize);
       for (var index = 0; index < this.xSize; index++) {
         for (var index2 = 0; index2 < this.ySize; index2++) {
-
           const data = context.getImageData(index * size, index2 * size, size, size);
           const length = data.data.length;
           let i = -4;
@@ -187,21 +197,42 @@ export class GridTableComp extends React.Component<Props, any> {
             rgb.g += data.data[i + 1];
             rgb.b += data.data[i + 2];
           }
-
           // ~~ used to floor values
           rgb.r = ~~(rgb.r / count);
           rgb.g = ~~(rgb.g / count);
           rgb.b = ~~(rgb.b / count);
-
-
           this.setCircle(index, index2, RGBToHex(rgb.r, rgb.g, rgb.b))
         }
       }
     });
   }
-  componentDidMount() {
-
+  drawGrid() {
+    this.layer["current"].clear();
+    this.rects = {};
+    Array.from(Array(this.xSize).keys()).forEach((x, xi) => {
+      return Array.from(Array(this.ySize).keys()).forEach((y, yi) => {
+        const gridRect = new Konva.Rect({
+          x: 2 + ((this.props.cellSize) * xi),
+          y: 2 + ((this.props.cellSize) * yi),
+          width: this.props.cellSize,
+          height: this.props.cellSize,
+          strokeWidth: 0.2,
+          fill: "#424242",
+          stroke: "#000"
+        });
+        if (!this.rects[x])
+          this.rects[x] = {};
+        this.rects[x][y] = gridRect;
+        this.layer["current"].add(gridRect);
+        gridRect.draw();
+      })
+    })
   }
+
+  componentDidMount() {
+    this.drawGrid();
+  }
+
   render() {
     const stageWidth = this.props.xSize * this.props.cellSize * this.scale;
     const stageHeight = this.props.ySize * this.props.cellSize * this.scale;
@@ -220,15 +251,19 @@ export class GridTableComp extends React.Component<Props, any> {
             <Layer
               ref={this.layer}
               onMouseDown={(evt) => {
-                if (!this.selectMode)
-                  return;
-                let x = evt.evt.offsetX / this.scale;
-                let y = evt.evt.offsetY / this.scale;
+                let xScale = (evt.evt.offsetX / this.scale);
+                let yScale = evt.evt.offsetY / this.scale;
+                let x = xScale - (xScale % this.props.cellSize);
+                let y = yScale - (yScale % this.props.cellSize);
                 this.isDraw = true;
+                if (!this.selectMode) {
+                  this.setCircle(Math.floor(x / this.props.cellSize), Math.floor(y / this.props.cellSize));
+                  return;
+                }
                 if (!this.selectRect) {
                   this.selectRect = new Konva.Rect({
-                    x: x - (x % this.props.cellSize),
-                    y: y - (y % this.props.cellSize),
+                    x: x,
+                    y: y,
                     width: this.props.cellSize,
                     height: this.props.cellSize,
                     strokeWidth: 2,
@@ -239,18 +274,26 @@ export class GridTableComp extends React.Component<Props, any> {
                 } else {
                   this.selectRect.show();
                   this.selectRect.setSize({ width: this.props.cellSize, height: this.props.cellSize });
-                  this.selectRect.setPosition({ x: x - (x % this.props.cellSize), y: y - (y % this.props.cellSize) });
+                  this.selectRect.setPosition({ x: x, y: y });
                   this.layer["current"].draw();
                 }
                 this.selectInfo["current"].innerText = `Seçilen 1 adet`;
               }}
               onMouseMove={(evt) => {
+                let xScale = (evt.evt.offsetX / this.scale);
+                let yScale = evt.evt.offsetY / this.scale;
+                let x = xScale - (xScale % this.props.cellSize);
+                let y = yScale - (yScale % this.props.cellSize);
+                if (!this.selectMode) {
+                  if (this.isDraw)
+                    this.setCircle(Math.floor(x / this.props.cellSize), Math.floor(y / this.props.cellSize));
+                  return;
+                }
                 if (!this.selectMode || !this.isDraw)
                   return;
+
                 const pos = this.selectRect.getPosition();
                 const size = this.selectRect.getSize();
-                let x = evt.evt.offsetX / this.scale;
-                let y = evt.evt.offsetY / this.scale;
                 let curX = x - pos.x;
                 let curY = y - pos.y;
                 let sizeX = curX - (curX % this.props.cellSize) + this.props.cellSize;
@@ -284,17 +327,21 @@ export class GridTableComp extends React.Component<Props, any> {
                 //   startY = temp;
                 // }
                 const d = [];
-                for (var i = startX; i < endX; i++)
-                  for (var c = startY; c < endY; c++) {
-                    if (this.circles[i] && this.circles[i][c])
-                      d.push(this.circles[i][c]);
-                  }
+                // for (var i = startX; i < endX; i++)
+                //   for (var c = startY; c < endY; c++) {
+                //     if (this.circles[i] && this.circles[i][c])
+                //       d.push(this.circles[i][c]);
+                //   }
               }}
               onMouseLeave={() => {
                 this.isDraw = false;
               }}>
+              {/* <Rect x={0} y={0}
+                width={stageWidth}
+                height={stageHeight}>
 
-              {
+              </Rect> */}
+              {/* {
                 Array.from(Array(this.props.xSize).keys()).map((x, xi) => {
                   return Array.from(Array(this.props.ySize).keys()).map((y, yi) => {
                     return <React.Fragment key={yi}>
@@ -357,7 +404,7 @@ export class GridTableComp extends React.Component<Props, any> {
                     </React.Fragment>
                   })
                 })
-              }
+              } */}
             </Layer>
           </Stage>
         </div>
