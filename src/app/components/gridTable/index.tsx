@@ -123,6 +123,7 @@ export class GridTableComp extends React.Component<Props, any> {
     if (this.scale != nextProps.scale) {
       this.scale = nextProps.scale;
       this.stage["current"].setScale({ x: this.scale, y: this.scale });
+      this.stage["current"].setSize({ width: nextProps.xSize * this.props.cellSize * this.scale, height: nextProps.ySize * this.props.cellSize * this.scale });
       this.stage["current"].draw();
       return false;
     }
@@ -221,7 +222,6 @@ export class GridTableComp extends React.Component<Props, any> {
               onMouseDown={(evt) => {
                 if (!this.selectMode)
                   return;
-                let ratio = 1;
                 let x = evt.evt.offsetX / this.scale;
                 let y = evt.evt.offsetY / this.scale;
                 this.isDraw = true;
@@ -249,8 +249,8 @@ export class GridTableComp extends React.Component<Props, any> {
                   return;
                 const pos = this.selectRect.getPosition();
                 const size = this.selectRect.getSize();
-                let x = evt.evt.offsetX;
-                let y = evt.evt.offsetY;
+                let x = evt.evt.offsetX / this.scale;
+                let y = evt.evt.offsetY / this.scale;
                 let curX = x - pos.x;
                 let curY = y - pos.y;
                 let sizeX = curX - (curX % this.props.cellSize) + this.props.cellSize;
@@ -286,7 +286,8 @@ export class GridTableComp extends React.Component<Props, any> {
                 const d = [];
                 for (var i = startX; i < endX; i++)
                   for (var c = startY; c < endY; c++) {
-                    d.push(this.circles[i][c]);
+                    if (this.circles[i] && this.circles[i][c])
+                      d.push(this.circles[i][c]);
                   }
               }}
               onMouseLeave={() => {
