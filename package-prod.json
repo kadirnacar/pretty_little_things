@@ -16,8 +16,6 @@
 
   "dependencies": {
     "lowdb": "^1.0.0",
-    "mmmagic": "^0.5.3",
-    "electron-rebuild": "^1.10.1",
     "route-parser": "^0.0.5"
   },
   "devDependencies": {}

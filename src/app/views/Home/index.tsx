@@ -1,15 +1,18 @@
 import { GridTable, NumberField } from "@components";
 import { Grid, Paper, Slider } from "@material-ui/core";
-import Button from '@material-ui/core/Button';
 import IconButton from '@material-ui/core/IconButton';
 import DeleteIcon from '@material-ui/icons/Delete';
+import FiberManualRecordIcon from '@material-ui/icons/FiberManualRecord';
+import InsertPhoto from '@material-ui/icons/InsertPhoto';
+import LibraryAddCheck from '@material-ui/icons/LibraryAddCheck';
+import PhotoSizeSelectSmall from '@material-ui/icons/PhotoSizeSelectSmall';
+
+import { ColorActions } from "@reducers";
+import { FileService } from "@services";
 import { ApplicationState } from "@store";
 import * as React from "react";
 import { connect } from "react-redux";
-import FiberManualRecordIcon from '@material-ui/icons/FiberManualRecord';
-import { ColorActions } from "@reducers";
 import { bindActionCreators } from "redux";
-import { FileService } from "@services";
 
 type Props = ApplicationState & { ColorActions: typeof ColorActions };
 
@@ -22,6 +25,7 @@ class Home extends React.Component<Props, any> {
       ySize: size,
       color: "#ffffff",
       scale: 1,
+      selectMode: false,
       image: { path: null, data: null },
       xSize_temp: size,
       ySize_temp: size,
@@ -70,29 +74,44 @@ class Home extends React.Component<Props, any> {
                 }} />
 
               <Grid item xs={12}>
-                <Button
-                  variant="contained"
+
+                <IconButton
+                  style={{ border: "1px solid #fff", marginRight: 10 }}
+                  title="Resim Yükle"
                   onClick={async () => {
                     const result = await FileService.getList();
-                    console.log(result)
                     if (!result.hasErrors())
                       this.setState({ image: result.value })
-                  }}>Resim Yükle</Button>
-                <Button
-                  variant="contained"
+                  }}>
+                  <InsertPhoto />
+                </IconButton>
+                <IconButton
+                  style={{ border: "1px solid #fff", marginRight: 10 }}
+                  title="Se."
+                  onClick={async () => {
+                    this.setState({ selectMode: true })
+                  }}>
+                  <PhotoSizeSelectSmall />
+                </IconButton>
+                <IconButton
+                  style={{ border: "1px solid #fff" }}
+                  title="Uygula"
                   onClick={async () => {
                     this.setState({
                       xSize: this.state.xSize_temp,
                       ySize: this.state.ySize_temp,
                       scale: this.state.scale_temp,
                     })
-                  }}>Uygula</Button>
+                  }}>
+                  <LibraryAddCheck />
+                </IconButton>
+
               </Grid>
               <Grid item xs={12}>
                 <IconButton
                   style={{ border: this.state.color == "hide" ? "1px solid #fff" : "none" }}
                   onClick={() => {
-                    this.setState({ color: "hide" })
+                    this.setState({ color: "hide", selectMode: false })
                   }}>
                   <DeleteIcon />
                 </IconButton>
@@ -101,7 +120,7 @@ class Home extends React.Component<Props, any> {
                     key={index}
                     style={{ border: this.state.color == item.code ? "1px solid #fff" : "none" }}
                     onClick={() => {
-                      this.setState({ color: item.code })
+                      this.setState({ color: item.code , selectMode: false})
                     }}>
                     <FiberManualRecordIcon htmlColor={item.code} />
                   </IconButton>
@@ -116,9 +135,10 @@ class Home extends React.Component<Props, any> {
             <GridTable
               image={this.state.image}
               color={this.state.color}
+              selectMode={this.state.selectMode}
               ySize={this.state.ySize}
               xSize={this.state.xSize}
-              scale={this.state.scale}
+              zoom={this.state.scale}
               cellSize={30} />
           </Paper>
         </Grid>

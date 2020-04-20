@@ -197,7 +197,7 @@ module.exports = (env, cnf) => {
                 new HtmlWebpackPlugin({
                     filename: path.resolve(".", `${output}/index.html`),
                     template: path.resolve("./public", 'index.html'),
-                    title: "Tv Player",
+                    title: "Pixel Design",
                     inject: true,
                     chunks: ['initial', 'index', 'vendor'],
                     cache: false
