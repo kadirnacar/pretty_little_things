@@ -6,6 +6,7 @@ import FiberManualRecordIcon from '@material-ui/icons/FiberManualRecord';
 import InsertPhoto from '@material-ui/icons/InsertPhoto';
 import LibraryAddCheck from '@material-ui/icons/LibraryAddCheck';
 import PhotoSizeSelectSmall from '@material-ui/icons/PhotoSizeSelectSmall';
+import Crop from '@material-ui/icons/Crop';
 
 import { ColorActions } from "@reducers";
 import { FileService } from "@services";
@@ -24,6 +25,7 @@ class Home extends React.Component<Props, any> {
       xSize: size,
       ySize: size,
       color: "#ffffff",
+      action: "",
       scale: 1,
       selectMode: false,
       image: { path: null, data: null },
@@ -38,8 +40,8 @@ class Home extends React.Component<Props, any> {
 
   render() {
     return (
-      <Grid container spacing={3} style={{ height: "100%" }}>
-        <Grid item xs={4} style={{ height: "100%" }}>
+      <Grid container spacing={3} style={{ height: "100%", width: "100%", margin: 0, padding: 0 }}>
+        {/* <Grid item xs={4} style={{ height: "100%" }}>
           <Paper>
             <Grid container style={{ padding: 10, width: "100%", backgroundColor: "#303030", margin: 0 }} spacing={3}>
               <NumberField
@@ -74,7 +76,6 @@ class Home extends React.Component<Props, any> {
                 }} />
 
               <Grid item xs={12}>
-
                 <IconButton
                   style={{ border: "1px solid #fff", marginRight: 10 }}
                   title="Resim Yükle"
@@ -84,14 +85,6 @@ class Home extends React.Component<Props, any> {
                       this.setState({ image: result.value })
                   }}>
                   <InsertPhoto />
-                </IconButton>
-                <IconButton
-                  style={{ border: "1px solid #fff", marginRight: 10 }}
-                  title="Se."
-                  onClick={async () => {
-                    this.setState({ selectMode: true })
-                  }}>
-                  <PhotoSizeSelectSmall />
                 </IconButton>
                 <IconButton
                   style={{ border: "1px solid #fff" }}
@@ -105,7 +98,25 @@ class Home extends React.Component<Props, any> {
                   }}>
                   <LibraryAddCheck />
                 </IconButton>
-
+              </Grid>
+              <Grid item xs={12}>
+                <IconButton
+                  style={{ border: "1px solid #fff", marginRight: 10 }}
+                  title="Seç"
+                  onClick={async () => {
+                    this.setState({ selectMode: true })
+                  }}>
+                  <PhotoSizeSelectSmall />
+                </IconButton>
+                <IconButton
+                  disabled={!this.state.selectMode}
+                  style={{ border: "1px solid #fff", marginRight: 10 }}
+                  title="Kırp"
+                  onClick={async () => {
+                    this.setState({ action: "crop" })
+                  }}>
+                  <Crop />
+                </IconButton>
               </Grid>
               <Grid item xs={12}>
                 <IconButton
@@ -120,7 +131,7 @@ class Home extends React.Component<Props, any> {
                     key={index}
                     style={{ border: this.state.color == item.code ? "1px solid #fff" : "none" }}
                     onClick={() => {
-                      this.setState({ color: item.code , selectMode: false})
+                      this.setState({ color: item.code, selectMode: false })
                     }}>
                     <FiberManualRecordIcon htmlColor={item.code} />
                   </IconButton>
@@ -130,24 +141,22 @@ class Home extends React.Component<Props, any> {
             </Grid>
           </Paper>
         </Grid>
-        <Grid item xs={8} style={{ height: "100%" }}>
-          <Paper style={{ overflow: "auto", height: "100%", position: "relative" }}>
-            <GridTable
-              image={this.state.image}
-              color={this.state.color}
-              selectMode={this.state.selectMode}
-              ySize={this.state.ySize}
-              xSize={this.state.xSize}
-              scale={this.state.scale}
-              cellSize={25} />
-          </Paper>
-        </Grid>
+        <Grid item xs={8} style={{ height: "100%" }}> */}
+        <GridTable
+          image={this.state.image}
+          color={this.state.color}
+          selectMode={this.state.selectMode}
+          ySize={this.state.ySize}
+          xSize={this.state.xSize}
+          scale={this.state.scale}
+          action={this.state.action}
+          cellSize={25} />
+        {/* </Grid> */}
       </Grid>
 
     );
   }
 }
-// export default Home;
 
 export const component = connect(
   (state: ApplicationState) => state,

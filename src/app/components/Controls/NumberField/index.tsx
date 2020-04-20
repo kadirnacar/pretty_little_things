@@ -26,6 +26,7 @@ const NumberFormatCustom = (props) => {
 }
 
 class NumberField extends Component<any, any> {
+    
     render() {
         const { md, xs, InputProps, ...others } = this.props;
         const inputProps = {
@@ -33,15 +34,16 @@ class NumberField extends Component<any, any> {
             inputComponent: NumberFormatCustom
         };
         return (
-            <Grid item md={md || 6} xs={xs || 12}>
-                <TextField
-                    fullWidth
-                    margin='dense'
-                    variant='standard'
-                    {...others}
-                    InputProps={inputProps}
-                />
-            </Grid >
+            // <Grid item md={md || 6} xs={xs || 12}>
+            <TextField
+                fullWidth
+                
+                margin='dense'
+                variant='standard'
+                {...others}
+                InputProps={inputProps}
+            />
+            // </Grid >
         )
     }
 }

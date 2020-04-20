@@ -84,13 +84,13 @@ class App extends React.Component<any, any> {
                 paddingTop: 20,
                 paddingBottom: 20,
                 overflow: "auto",
-                minHeight: "100%"
+                minHeight: "100%", margin: 0, padding: 0 
               }}>
                 {/* <div style={{ minHeight: 64 }} /> */}
 
-                <Container maxWidth="xl" style={{ height: "100%" }}>
+                <Container maxWidth="xl" style={{ height: "100%", margin: 0, padding: 0  }}>
                   <MuiPickersUtilsProvider utils={MomentUtils} locale="tr">
-                    <Grid container spacing={2} style={{ width: "100%", height: "100%" }} >
+                    <Grid container spacing={2} style={{ width: "100%", height: "100%", margin: 0, padding: 0 }} >
                       {/* <Routes/> */}
                       {this.props.children}
                     </Grid>

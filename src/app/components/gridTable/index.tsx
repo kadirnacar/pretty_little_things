@@ -1,17 +1,26 @@
+import { NumberField } from "@components";
+import { AppBar, Button, ButtonGroup, IconButton, MenuItem, Paper, Select, Toolbar, Typography } from "@material-ui/core";
+import Crop from '@material-ui/icons/Crop';
+import DeleteIcon from '@material-ui/icons/Delete';
+import FiberManualRecordIcon from '@material-ui/icons/FiberManualRecord';
+import InsertPhoto from '@material-ui/icons/InsertPhoto';
+import LibraryAddCheck from '@material-ui/icons/LibraryAddCheck';
+import PhotoSizeSelectSmall from '@material-ui/icons/PhotoSizeSelectSmall';
+import ZoomIn from '@material-ui/icons/ZoomIn';
+import ZoomOut from '@material-ui/icons/ZoomOut';
 import { ColorActions } from "@reducers";
+import { FileService } from "@services";
 import { ApplicationState } from "@store";
+import Konva from "konva";
 import * as React from "react";
-import { Circle, Image, Layer, Rect, Stage } from "react-konva";
+import { Layer, Stage, Rect } from "react-konva";
 import { connect } from "react-redux";
 import { bindActionCreators } from "redux";
-import Konva from "konva";
-import { Paper } from "@material-ui/core";
 
 interface GridTableProps extends ApplicationState {
-  xSize?: number;
-  ySize?: number;
   scale?: number;
   color?: string;
+  action?: string;
   selectMode?: boolean;
   image?: { path: string, data: string };
   cellSize?: number;
@@ -52,10 +61,9 @@ const getImageData = (image) => {
 
 export class GridTableComp extends React.Component<Props, any> {
   static defaultProps: GridTableProps = {
-    xSize: 20,
-    ySize: 20,
     scale: 1,
     color: "#ffffff",
+    action: "",
     selectMode: false,
     image: { path: null, data: null },
     cellSize: 10,
@@ -63,9 +71,12 @@ export class GridTableComp extends React.Component<Props, any> {
 
   constructor(props) {
     super(props);
+    this.handleMouseDown = this.handleMouseDown.bind(this);
+    this.handleMouseMove = this.handleMouseMove.bind(this);
+    this.handleMouseUp = this.handleMouseUp.bind(this);
     this.isDraw = false;
-    this.xSize = props.xSize;
-    this.ySize = props.ySize;
+    this.xSize = 20;
+    this.ySize = 20;
     this.image = props.image;
     this.imageEl = null;
     this.color = "#ffffff";
@@ -77,7 +88,7 @@ export class GridTableComp extends React.Component<Props, any> {
     this.circles = {};
     this.rects = {};
     this.selectMode = false;
-    this.state = { image: null }
+    this.state = { image: null, xSize: 20, ySize: 20 }
   }
 
   color: string;
@@ -97,44 +108,10 @@ export class GridTableComp extends React.Component<Props, any> {
   selectInfo: React.Ref<any>;
 
   shouldComponentUpdate(nextProps, nextState) {
-    this.xSize = nextProps.xSize;
-    this.ySize = nextProps.ySize;
-    if (this.props.xSize != nextProps.xSize || this.props.ySize != nextProps.ySize) {
-      this.xSize = nextProps.xSize;
-      this.ySize = nextProps.ySize;
-      this.drawGrid();
-      this.stage["current"].setSize({ width: nextProps.xSize * this.props.cellSize * this.scale, height: nextProps.ySize * this.props.cellSize * this.scale });
-      this.stage["current"].draw();
-
-      this.loadImage();
-      return false;
-    }
-    if (this.props.cellSize != nextProps.cellSize)
+    if (this.props.Color != nextProps.Color)
       return true;
-    if (nextProps.image && this.props.image.path != nextProps.image.path) {
-      this.image = nextProps.image;
-      this.loadImage();
-      return false;
-    }
-    if (this.scale != nextProps.scale) {
-      this.scale = nextProps.scale;
-      this.stage["current"].setScale({ x: this.scale, y: this.scale });
-      this.stage["current"].setSize({ width: nextProps.xSize * this.props.cellSize * this.scale, height: nextProps.ySize * this.props.cellSize * this.scale });
-      this.stage["current"].draw();
-      return false;
-    }
-    if (this.props.color != nextProps.color || this.props.selectMode != nextProps.selectMode) {
-      this.color = nextProps.color;
-      this.selectMode = nextProps.selectMode;
-      if (this.selectRect) {
-        this.selectRect.hide();
-        this.stage["current"].draw();
-      }
-      return false;
-    }
     return false;
   }
-
   setCircle(x: number, y: number, color = null) {
     if (!color)
       color = this.color;
@@ -174,6 +151,9 @@ export class GridTableComp extends React.Component<Props, any> {
   loadImage() {
     if (!this.image || !this.image.data)
       return;
+    Object.getOwnPropertyNames(this.circles).forEach(key => Object.getOwnPropertyNames(this.circles[key]).forEach(rect => this.circles[key][rect].destroy()));
+    this.circles = {};
+    this.layer["current"].clear();
     this.imageEl = new window.Image();
     this.imageEl.src = this.image.data;
     this.imageEl.addEventListener('load', () => {
@@ -207,7 +187,13 @@ export class GridTableComp extends React.Component<Props, any> {
     });
   }
   drawGrid() {
-    this.layer["current"].clear();
+    if (!this.image && !this.image.data) {
+      this.layer["current"].clear();
+      Object.getOwnPropertyNames(this.circles).forEach(key => Object.getOwnPropertyNames(this.circles[key]).forEach(rect => this.circles[key][rect].destroy()));
+      this.circles = {};
+    }
+    if (this.rects)
+      Object.getOwnPropertyNames(this.rects).forEach(key => Object.getOwnPropertyNames(this.rects[key]).forEach(rect => this.rects[key][rect].destroy()));
     this.rects = {};
     Array.from(Array(this.xSize).keys()).forEach((x, xi) => {
       return Array.from(Array(this.ySize).keys()).forEach((y, yi) => {
@@ -227,188 +213,264 @@ export class GridTableComp extends React.Component<Props, any> {
         gridRect.draw();
       })
     })
+    if (this.circles)
+      Object.getOwnPropertyNames(this.circles).forEach(key => Object.getOwnPropertyNames(this.circles[key]).forEach(rect => { this.circles[key][rect].moveToTop(); this.circles[key][rect].draw() }));
+    this.setStageSize();
   }
-
+  setStageSize() {
+    this.stage["current"].setSize({ width: (this.xSize * this.props.cellSize * this.scale) + 5, height: (this.ySize * this.props.cellSize * this.scale) + 5 });
+    this.stage["current"].draw();
+  }
   componentDidMount() {
     this.drawGrid();
   }
+  handleMouseDown(evt) {
+    let xScale = (evt.evt.offsetX / this.scale);
+    let yScale = evt.evt.offsetY / this.scale;
+    let x = xScale - (xScale % this.props.cellSize);
+    let y = yScale - (yScale % this.props.cellSize);
+    this.isDraw = true;
+    if (!this.selectMode) {
+      this.setCircle(Math.floor(x / this.props.cellSize), Math.floor(y / this.props.cellSize));
+      return;
+    }
+    if (!this.selectRect) {
+      this.selectRect = new Konva.Rect({
+        x: x,
+        y: y,
+        width: this.props.cellSize,
+        height: this.props.cellSize,
+        strokeWidth: 2,
+        stroke: "#ffffff"
+      })
+      this.selectRect.moveToTop();
+      this.layer["current"].add(this.selectRect);
+      this.selectRect.draw();
+    } else {
+      this.selectRect.moveToTop();
+      this.selectRect.show();
+      this.selectRect.setSize({ width: this.props.cellSize, height: this.props.cellSize });
+      this.selectRect.setPosition({ x: x, y: y });
+      this.selectRect.draw();
+    }
+    this.selectInfo["current"].innerText = `Seçilen 1 adet`;
+  }
+  handleMouseMove(evt) {
+    let xScale = (evt.evt.offsetX / this.scale);
+    let yScale = evt.evt.offsetY / this.scale;
+    let x = xScale - (xScale % this.props.cellSize);
+    let y = yScale - (yScale % this.props.cellSize);
+    if (!this.selectMode) {
+      if (this.isDraw)
+        this.setCircle(Math.floor(x / this.props.cellSize), Math.floor(y / this.props.cellSize));
+      return;
+    }
+    if (!this.selectMode || !this.isDraw)
+      return;
 
+    const pos = this.selectRect.getPosition();
+    const size = this.selectRect.getSize();
+    let curX = x - pos.x;
+    let curY = y - pos.y;
+    let sizeX = curX - (curX % this.props.cellSize) + this.props.cellSize;
+    let sizeY = curY - (curY % this.props.cellSize) + this.props.cellSize;
+
+    if (size.height != sizeY || size.width != sizeX) {
+      this.selectRect.setSize({ width: sizeX, height: sizeY });
+      this.layer["current"].draw();
+    }
+    this.selectInfo["current"].innerText = `Seçilen ${(sizeX / this.props.cellSize) * (sizeY / this.props.cellSize)} adet`;
+
+  }
+  handleMouseUp(evt) {
+    this.isDraw = false;
+
+  }
   render() {
-    const stageWidth = this.props.xSize * this.props.cellSize * this.scale;
-    const stageHeight = this.props.ySize * this.props.cellSize * this.scale;
+    const stageWidth = (this.state.xSize * this.props.cellSize * this.scale) + 5;
+    const stageHeight = (this.state.ySize * this.props.cellSize * this.scale) + 5;
     return (
-      <div>
-        <Paper style={{ height: 30, position: "sticky", zIndex: 99, top: 0 }}>
-          <div style={{ marginRight: 20, float: "left" }} ref={this.countInfo}></div>
-          <div style={{ float: "left" }} ref={this.selectInfo}></div>
+      <React.Fragment>
+        <Paper style={{ overflow: "auto", width: "100%", height: "100%", position: "relative", flexGrow: 1, paddingTop: 65 }}>
+          <AppBar position="fixed" color={"default"} style={{ top: 48 }}>
+            <Toolbar>
+              <IconButton
+                style={{ border: "1px solid #fff", marginRight: 10 }}
+                title="Resim Yükle"
+                onClick={async () => {
+                  const result = await FileService.getList();
+                  if (!result.hasErrors()) {
+                    this.image = result.value;
+                    this.loadImage();
+                  }
+                }}>
+                <InsertPhoto />
+              </IconButton>
+              <NumberField
+                label={"Genişlik"}
+                style={{ width: 50, marginRight: 20 }}
+                defaultValue={this.xSize}
+                onChange={(event) => {
+                  if (event.target.value <= 200 || !event.target.value) {
+                    this.xSize = event.target.value;
+                  }
+                }} />
+              <NumberField
+                label={"Yükseklik"}
+                style={{ width: 50, marginRight: 20 }}
+                defaultValue={this.ySize}
+                onChange={(event) => {
+                  if (event.target.value <= 200 || !event.target.value) {
+                    this.ySize = event.target.value;
+                  }
+                }}
+              />
+              <ButtonGroup color="default"
+                style={{ marginRight: 10 }}
+              >
+                <Button
+                  title="Uygula"
+                  onClick={async () => {
+                    this.drawGrid();
+                    this.setStageSize();
+                    this.loadImage();
+                  }}>
+                  <LibraryAddCheck />
+                </Button>
+              </ButtonGroup>
+              <ButtonGroup color="default" style={{ marginRight: 10 }}>
+                <Button
+                  title="Küçült"
+                  onClick={async () => {
+                    this.scale -= 0.1;
+                    this.stage["current"].scale({ x: this.scale, y: this.scale });
+                    this.setStageSize();
+                  }}>
+                  <ZoomOut />
+                </Button>
+
+                <Button
+                  title="Büyült"
+                  onClick={async () => {
+                    this.scale += 0.1;
+                    this.stage["current"].scale({ x: this.scale, y: this.scale });
+                    this.setStageSize();
+                  }}>
+                  <ZoomIn />
+                </Button>
+              </ButtonGroup>
+              <ButtonGroup color="default" style={{ marginRight: 10 }}>
+                <Button
+                  title="Seç"
+                  onClick={async () => {
+                    this.selectMode = !this.selectMode;
+                    if (this.selectRect) {
+                      this.selectRect.hide();
+                      this.layer["current"].draw();
+                    }
+                  }}>
+                  <PhotoSizeSelectSmall />
+                </Button>
+                <Button
+                  title="Kırp"
+                  onClick={async () => {
+                    if (this.selectMode && this.selectRect) {
+                      const pos = this.selectRect.getPosition();
+                      const size = this.selectRect.getSize();
+                      let startX = (pos.x - (pos.x % this.props.cellSize)) / this.props.cellSize;
+                      let startY = (pos.y - (pos.y % this.props.cellSize)) / this.props.cellSize;
+                      let endX = startX + ((size.width - (size.width % this.props.cellSize)) / this.props.cellSize);
+                      let endY = startY + ((size.height - (size.height % this.props.cellSize)) / this.props.cellSize);
+                      if (this.selectRect) {
+                        this.selectRect.hide();
+                        this.layer["current"].draw();
+                      }
+                      const d = {};
+                      let xi = 0;
+                      let yi = 0;
+
+                      for (var i = startX; i < endX; i++) {
+                        for (var c = startY; c < endY; c++) {
+                          if (this.circles[i.toString()] && this.circles[i.toString()][c.toString()]) {
+                            if (!d[xi.toString()])
+                              d[xi.toString()] = {};
+                            const cPos = this.circles[i.toString()][c.toString()].getPosition();
+                            this.circles[i.toString()][c.toString()].setPosition({ x: cPos.x - (startX * this.props.cellSize), y: cPos.y - (startY * this.props.cellSize) })
+                            const pos = this.circles[i.toString()][c.toString()].getPosition();
+                            d[xi.toString()][yi.toString()] = new Konva.Circle({
+                              x: pos.x,
+                              y: pos.y,
+                              radius: (this.props.cellSize / 2) - 4,
+                              strokeWidth: 5,
+                              stroke: this.circles[i][c].getStroke()
+                            })
+                            this.layer["current"].add(d[xi.toString()][yi.toString()]);
+                          }
+                          yi++;
+                        }
+                        xi++;
+                      }
+                      Object.getOwnPropertyNames(this.circles).forEach(key => Object.getOwnPropertyNames(this.circles[key]).forEach(rect => this.circles[key][rect].destroy()));
+                      this.circles = d;
+                      
+                      this.xSize = endX - startX;
+                      this.ySize = endY - startY;
+                      
+                      this.setStageSize();
+                      this.drawGrid();
+                    }
+                  }}>
+                  <Crop />
+                </Button>
+              </ButtonGroup>
+              <ButtonGroup color="default" style={{ marginRight: 10 }}>
+                <Button
+                  title="Seç"
+                  onClick={async () => {
+                    this.selectMode = false;
+                    this.color = "hide";
+                    if (this.selectRect) {
+                      // this.selectRect.hide();
+                      this.stage["current"].draw();
+                    }
+                  }}>
+                  <DeleteIcon />
+                </Button>
+              </ButtonGroup>
+              <Select defaultValue="#ffffff"
+                onChange={(evt) => {
+                  this.color = evt.target.value.toString();
+                }}>
+                {
+                  this.props.Color.List.map((c, i) => {
+                    return <MenuItem key={i} value={c.code}><FiberManualRecordIcon htmlColor={c.code} /></MenuItem>
+                  })
+
+                }
+              </Select>
+              <Typography style={{ flexGrow: 1 }} variant="caption" />
+              <Typography style={{ marginRight: 10 }} variant="caption" ref={this.countInfo} />
+              <Typography variant="caption" ref={this.selectInfo}></Typography>
+            </Toolbar>
+
+          </AppBar>
+          <div>
+            <Stage
+              ref={this.stage}
+              scale={{ x: this.scale, y: this.scale }}
+              width={stageWidth}
+              height={stageHeight}>
+
+              <Layer
+                onMouseDown={this.handleMouseDown}
+                onMouseMove={this.handleMouseMove}
+                onMouseUp={this.handleMouseUp}
+                ref={this.layer}>
+              </Layer>
+            </Stage>
+          </div>
         </Paper>
-        <div>
-          <Stage
-            ref={this.stage}
-            scale={{ x: this.scale, y: this.scale }}
-            width={stageWidth}
-            height={stageHeight}>
-            <Layer
-              ref={this.layer}
-              onMouseDown={(evt) => {
-                let xScale = (evt.evt.offsetX / this.scale);
-                let yScale = evt.evt.offsetY / this.scale;
-                let x = xScale - (xScale % this.props.cellSize);
-                let y = yScale - (yScale % this.props.cellSize);
-                this.isDraw = true;
-                if (!this.selectMode) {
-                  this.setCircle(Math.floor(x / this.props.cellSize), Math.floor(y / this.props.cellSize));
-                  return;
-                }
-                if (!this.selectRect) {
-                  this.selectRect = new Konva.Rect({
-                    x: x,
-                    y: y,
-                    width: this.props.cellSize,
-                    height: this.props.cellSize,
-                    strokeWidth: 2,
-                    stroke: "#ffffff"
-                  })
-                  this.layer["current"].add(this.selectRect);
-                  this.layer["current"].draw();
-                } else {
-                  this.selectRect.show();
-                  this.selectRect.setSize({ width: this.props.cellSize, height: this.props.cellSize });
-                  this.selectRect.setPosition({ x: x, y: y });
-                  this.layer["current"].draw();
-                }
-                this.selectInfo["current"].innerText = `Seçilen 1 adet`;
-              }}
-              onMouseMove={(evt) => {
-                let xScale = (evt.evt.offsetX / this.scale);
-                let yScale = evt.evt.offsetY / this.scale;
-                let x = xScale - (xScale % this.props.cellSize);
-                let y = yScale - (yScale % this.props.cellSize);
-                if (!this.selectMode) {
-                  if (this.isDraw)
-                    this.setCircle(Math.floor(x / this.props.cellSize), Math.floor(y / this.props.cellSize));
-                  return;
-                }
-                if (!this.selectMode || !this.isDraw)
-                  return;
-
-                const pos = this.selectRect.getPosition();
-                const size = this.selectRect.getSize();
-                let curX = x - pos.x;
-                let curY = y - pos.y;
-                let sizeX = curX - (curX % this.props.cellSize) + this.props.cellSize;
-                let sizeY = curY - (curY % this.props.cellSize) + this.props.cellSize;
-
-                if (size.height != sizeY || size.width != sizeX) {
-                  this.selectRect.setSize({ width: sizeX, height: sizeY });
-                  this.layer["current"].draw();
-                }
-                this.selectInfo["current"].innerText = `Seçilen ${(sizeX / this.props.cellSize) * (sizeY / this.props.cellSize)} adet`;
-              }}
-              onMouseUp={() => {
-                this.isDraw = false;
-                if (!this.selectMode)
-                  return;
-                const pos = this.selectRect.getPosition();
-                const size = this.selectRect.getSize();
-                let startX = (pos.x - (pos.x % this.props.cellSize)) / this.props.cellSize;
-                let startY = (pos.y - (pos.y % this.props.cellSize)) / this.props.cellSize;
-                let endX = startX + ((size.width - (size.width % this.props.cellSize)) / this.props.cellSize);
-                let endY = startY + ((size.height - (size.height % this.props.cellSize)) / this.props.cellSize);
-
-                // if (endX < startX) {
-                //   const temp = endX;
-                //   endX = startX;
-                //   startX = temp;
-                // }
-                // if (endY < startY) {
-                //   const temp = endY;
-                //   endY = startY;
-                //   startY = temp;
-                // }
-                const d = [];
-                // for (var i = startX; i < endX; i++)
-                //   for (var c = startY; c < endY; c++) {
-                //     if (this.circles[i] && this.circles[i][c])
-                //       d.push(this.circles[i][c]);
-                //   }
-              }}
-              onMouseLeave={() => {
-                this.isDraw = false;
-              }}>
-              {/* <Rect x={0} y={0}
-                width={stageWidth}
-                height={stageHeight}>
-
-              </Rect> */}
-              {/* {
-                Array.from(Array(this.props.xSize).keys()).map((x, xi) => {
-                  return Array.from(Array(this.props.ySize).keys()).map((y, yi) => {
-                    return <React.Fragment key={yi}>
-                      <Rect
-                        ref={(c) => {
-                          if (!this.rects[xi])
-                            this.rects[xi] = [];
-                          this.rects[xi][yi] = c
-                        }}
-                        x={2 + ((this.props.cellSize) * xi)}
-                        y={2 + ((this.props.cellSize) * yi)}
-                        width={this.props.cellSize}
-                        height={this.props.cellSize}
-                        strokeWidth={0.2}
-                        fill={"#424242"}
-                        stroke={"#000"}
-                        onMouseOver={(e) => {
-                          if (this.isDraw && !this.selectMode) {
-                            this.setCircle(xi, yi);
-                          }
-                        }}
-                        onMouseUp={() => {
-                          this.isDraw = false;
-                        }}
-                        onMouseDown={(e) => {
-                          if (!this.selectMode) {
-                            this.setCircle(xi, yi);
-                            this.isDraw = true;
-                          }
-                        }}
-                      >
-                      </Rect>
-                      <Circle
-                        ref={(c) => {
-                          if (!this.circles[xi])
-                            this.circles[xi] = [];
-                          this.circles[xi][yi] = c
-                        }}
-
-                        x={2 + (((this.props.cellSize) * xi)) + (this.props.cellSize / 2)}
-                        y={2 + (((this.props.cellSize) * yi)) + (this.props.cellSize / 2)}
-                        radius={(this.props.cellSize / 2) - 4}
-                        strokeWidth={8}
-                        visible={false}
-                        onMouseOver={(e) => {
-                          if (this.isDraw && !this.selectMode) {
-                            this.setCircle(xi, yi);
-                          }
-                        }}
-                        onMouseUp={() => {
-                          this.isDraw = false;
-                        }}
-                        onMouseDown={(e) => {
-                          if (!this.selectMode) {
-                            this.setCircle(xi, yi);
-                            this.isDraw = true;
-                          }
-                        }}
-                      ></Circle>
-                    </React.Fragment>
-                  })
-                })
-              } */}
-            </Layer>
-          </Stage>
-        </div>
-      </div>
+      </React.Fragment>
     );
   }
 }
