@@ -138,7 +138,7 @@ class Home extends React.Component<Props, any> {
               selectMode={this.state.selectMode}
               ySize={this.state.ySize}
               xSize={this.state.xSize}
-              zoom={this.state.scale}
+              scale={this.state.scale}
               cellSize={30} />
           </Paper>
         </Grid>

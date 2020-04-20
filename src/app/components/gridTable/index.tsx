@@ -10,7 +10,7 @@ import { Paper } from "@material-ui/core";
 interface GridTableProps extends ApplicationState {
   xSize?: number;
   ySize?: number;
-  zoom?: number;
+  scale?: number;
   color?: string;
   selectMode?: boolean;
   image?: { path: string, data: string };
@@ -54,7 +54,7 @@ export class GridTableComp extends React.Component<Props, any> {
   static defaultProps: GridTableProps = {
     xSize: 20,
     ySize: 20,
-    zoom: 1,
+    scale: 1,
     color: "#ffffff",
     selectMode: false,
     image: { path: null, data: null },
@@ -73,8 +73,7 @@ export class GridTableComp extends React.Component<Props, any> {
     this.stage = React.createRef();
     this.countInfo = React.createRef();
     this.selectInfo = React.createRef();
-    this.zoom = 1;
-    this.zoomEl = React.createRef();
+    this.scale = 1;
     this.circles = [];
     this.rects = [];
     this.selectMode = false;
@@ -90,13 +89,12 @@ export class GridTableComp extends React.Component<Props, any> {
   stage: React.Ref<any>;
   circles: any[][];
   rects: any[][];
-  zoom: number;
+  scale: number;
   imageEl: HTMLImageElement;
   selectMode: boolean;
   selectRect: Konva.Rect;
   countInfo: React.Ref<any>;
   selectInfo: React.Ref<any>;
-  zoomEl: React.Ref<any>;
 
   componentDidUpdate() {
     // this.loadImage()
@@ -122,10 +120,10 @@ export class GridTableComp extends React.Component<Props, any> {
       this.loadImage();
       return false;
     }
-    if (this.props.zoom != nextProps.zoom) {
-      this.zoom = nextProps.zoom;
-      console.log(this.zoom)
-      this.zoomEl["current"].style.zoom = nextProps.zoom;
+    if (this.scale != nextProps.scale) {
+      this.scale = nextProps.scale;
+      this.stage["current"].setScale({ x: this.scale, y: this.scale });
+      this.stage["current"].draw();
       return false;
     }
     if (this.props.color != nextProps.color || this.props.selectMode != nextProps.selectMode) {
@@ -204,17 +202,18 @@ export class GridTableComp extends React.Component<Props, any> {
 
   }
   render() {
-    const stageWidth = this.props.xSize * this.props.cellSize;
-    const stageHeight = this.props.ySize * this.props.cellSize;
+    const stageWidth = this.props.xSize * this.props.cellSize * this.scale;
+    const stageHeight = this.props.ySize * this.props.cellSize * this.scale;
     return (
       <div>
         <Paper style={{ height: 30, position: "sticky", zIndex: 99, top: 0 }}>
           <div style={{ marginRight: 20, float: "left" }} ref={this.countInfo}></div>
           <div style={{ float: "left" }} ref={this.selectInfo}></div>
         </Paper>
-        <div ref={this.zoomEl}>
+        <div>
           <Stage
             ref={this.stage}
+            scale={{ x: this.scale, y: this.scale }}
             width={stageWidth}
             height={stageHeight}>
             <Layer
@@ -222,12 +221,9 @@ export class GridTableComp extends React.Component<Props, any> {
               onMouseDown={(evt) => {
                 if (!this.selectMode)
                   return;
-
                 let ratio = 1;
-
-                let x = evt.evt.offsetX / this.zoom;
-                let y = evt.evt.offsetY / this.zoom;
-                console.log(x,y)
+                let x = evt.evt.offsetX / this.scale;
+                let y = evt.evt.offsetY / this.scale;
                 this.isDraw = true;
                 if (!this.selectRect) {
                   this.selectRect = new Konva.Rect({
