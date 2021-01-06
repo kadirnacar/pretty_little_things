@@ -40,7 +40,7 @@
     "@material-ui/icons": "^4.9.1",
     "@material-ui/lab": "^4.0.0-alpha.49",
     "@material-ui/styles": "^4.9.10",
-    "axios": "^0.19.2",
+    "axios": "^0.21.1",
     "babel-loader": "^8.1.0",
     "colorthief": "^2.3.0",
     "cross-env": "^7.0.2",
